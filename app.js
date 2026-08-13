@@ -590,7 +590,15 @@ function openEditor(link) {
   if (!elements.editorDialog.open) {
     elements.editorDialog.showModal();
   }
-  window.setTimeout(() => elements.editorTitle.focus(), 50);
+  window.setTimeout(() => {
+    resizeEditorTitle();
+    elements.editorTitle.focus();
+  }, 50);
+}
+
+function resizeEditorTitle() {
+  elements.editorTitle.style.height = "auto";
+  elements.editorTitle.style.height = `${Math.max(elements.editorTitle.scrollHeight, 112)}px`;
 }
 
 function closeEditor() {
@@ -632,7 +640,7 @@ async function saveCurrentEdit() {
     if (metadata.kind === "video") editingLink.performers = performers;
     closeEditor();
     renderLinks();
-    setStatus(IS_LOCAL_PREVIEW ? "" : "変更を保存しました。");
+    setStatus("");
   } catch (error) {
     elements.editorError.textContent = `保存できませんでした：${error.message}`;
   } finally {
@@ -720,6 +728,8 @@ elements.performerInput.addEventListener("keydown", (event) => {
     addSelectedPerformer(elements.performerInput.value);
   }
 });
+
+elements.editorTitle.addEventListener("input", resizeEditorTitle);
 
 elements.editorForm.addEventListener("submit", async (event) => {
   event.preventDefault();

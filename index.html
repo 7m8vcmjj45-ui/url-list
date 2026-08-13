@@ -17,19 +17,19 @@
   </head>
   <body>
     <div class="page-shell">
-      <header class="app-header">
-        <h1>MyList</h1>
-        <div class="header-actions">
-          <button class="icon-button" id="refresh-button" type="button" aria-label="一覧を更新">
-            <span aria-hidden="true">↻</span>
-          </button>
-          <button class="icon-button" id="settings-button" type="button" aria-label="接続設定を開く">
-            <span aria-hidden="true">•••</span>
-          </button>
-        </div>
-      </header>
+      <div class="sticky-navigation">
+        <header class="app-header">
+          <h1>MyList</h1>
+          <div class="header-actions">
+            <button class="icon-button" id="refresh-button" type="button" aria-label="一覧を更新">
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button class="icon-button" id="settings-button" type="button" aria-label="接続設定を開く">
+              <span aria-hidden="true">•••</span>
+            </button>
+          </div>
+        </header>
 
-      <main>
         <nav class="content-tabs" aria-label="表示する種類" role="tablist">
           <button class="content-tab" id="comic-tab" type="button" role="tab" aria-selected="true">
             漫画
@@ -38,7 +38,9 @@
             動画
           </button>
         </nav>
+      </div>
 
+      <main>
         <p id="status" class="status" role="status" aria-live="polite"></p>
 
         <section id="list" class="link-list" aria-label="保存したURL一覧"></section>
@@ -123,7 +125,13 @@
 
           <label class="editor-field">
             <span>タイトル</span>
-            <input id="editor-title" type="text" maxlength="300" autocomplete="off" required />
+            <textarea
+              id="editor-title"
+              rows="4"
+              maxlength="300"
+              autocomplete="off"
+              required
+            ></textarea>
           </label>
 
           <section id="performer-editor" class="performer-editor" hidden>

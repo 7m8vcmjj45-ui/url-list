@@ -30,7 +30,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -42,7 +43,15 @@ button {
   width: min(100%, 720px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(24px, env(safe-area-inset-top)) 18px max(36px, env(safe-area-inset-bottom));
+  padding: 0 18px max(36px, env(safe-area-inset-bottom));
+}
+
+.sticky-navigation {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  padding-top: max(24px, env(safe-area-inset-top));
+  background: var(--background);
 }
 
 .app-header,
@@ -326,9 +335,9 @@ h1 {
   font-weight: 650;
 }
 
-input {
+input,
+textarea {
   width: 100%;
-  min-height: 46px;
   padding: 10px 12px;
   border: 1px solid #cfcfcf;
   border-radius: 0;
@@ -338,9 +347,22 @@ input {
   font-size: 16px;
 }
 
-input:focus {
+input {
+  min-height: 46px;
+}
+
+textarea {
+  min-height: 112px;
+  line-height: 1.6;
+  overflow-y: hidden;
+  overflow-wrap: anywhere;
+  resize: none;
+}
+
+input:focus,
+textarea:focus {
   border-color: var(--accent);
-  outline: 2px solid rgba(23, 107, 77, 0.12);
+  outline: 2px solid rgba(48, 48, 48, 0.12);
 }
 
 .input-with-actions,
