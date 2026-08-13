@@ -597,8 +597,10 @@ function openEditor(link) {
 }
 
 function resizeEditorTitle() {
-  elements.editorTitle.style.height = "auto";
-  elements.editorTitle.style.height = `${Math.max(elements.editorTitle.scrollHeight, 112)}px`;
+  window.requestAnimationFrame(() => {
+    elements.editorTitle.style.height = "auto";
+    elements.editorTitle.style.height = `${Math.max(elements.editorTitle.scrollHeight + 2, 112)}px`;
+  });
 }
 
 function closeEditor() {
@@ -730,6 +732,7 @@ elements.performerInput.addEventListener("keydown", (event) => {
 });
 
 elements.editorTitle.addEventListener("input", resizeEditorTitle);
+elements.editorTitle.addEventListener("compositionend", resizeEditorTitle);
 
 elements.editorForm.addEventListener("submit", async (event) => {
   event.preventDefault();
