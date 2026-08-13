@@ -1,16 +1,70 @@
 "use strict";
 
 const STORAGE_KEY = "url-list.settings.v1";
-const SORT_KEY = "url-list.sort.v1";
+const ACTIVE_KIND_KEY = "url-list.active-kind.v1";
+const IS_LOCAL_PREVIEW =
+  ["127.0.0.1", "localhost"].includes(window.location.hostname) &&
+  new URLSearchParams(window.location.search).has("preview");
+
+const PREVIEW_LINKS = [
+  {
+    id: "preview-comic-1",
+    url: "https://comic-days.com/episode/1",
+    title: "第48話 ひらやすみ｜コミックDAYS",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-13T12:40:00Z",
+  },
+  {
+    id: "preview-video-1",
+    url: "https://www.youtube.com/watch?v=preview1",
+    title: "短編映画『夏の庭』【出演：山田太郎、佐藤花子】 - YouTube",
+    custom_title: "夏の庭",
+    performers: ["山田太郎", "佐藤花子"],
+    created_at: "2026-08-13T11:25:00Z",
+  },
+  {
+    id: "preview-comic-2",
+    url: "https://shonenjumpplus.com/episode/2",
+    title: "ダンダダン 第213話｜少年ジャンプ＋",
+    custom_title: "ダンダダン",
+    performers: null,
+    created_at: "2026-08-12T08:10:00Z",
+  },
+  {
+    id: "preview-video-2",
+    url: "https://vimeo.com/preview2",
+    title: "夜を歩く（出演：山田太郎） - Vimeo",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-11T14:15:00Z",
+  },
+  {
+    id: "preview-video-3",
+    url: "https://video.example.com/watch/preview3",
+    title: "海辺の記憶【主演：佐藤花子】 - Video",
+    custom_title: "海辺の記憶",
+    performers: ["佐藤花子"],
+    created_at: "2026-08-10T05:30:00Z",
+  },
+  {
+    id: "preview-comic-3",
+    url: "https://comic-walker.com/detail/3",
+    title: "第7話 正反対な君と僕｜カドコミ",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-09T03:05:00Z",
+  },
+];
 
 const elements = {
   list: document.querySelector("#list"),
   emptyState: document.querySelector("#empty-state"),
-  itemCount: document.querySelector("#item-count"),
   status: document.querySelector("#status"),
-  sortMode: document.querySelector("#sort-mode"),
   refreshButton: document.querySelector("#refresh-button"),
   settingsButton: document.querySelector("#settings-button"),
+  comicTab: document.querySelector("#comic-tab"),
+  videoTab: document.querySelector("#video-tab"),
   settingsDialog: document.querySelector("#settings-dialog"),
   settingsForm: document.querySelector("#settings-form"),
   closeSettings: document.querySelector("#close-settings"),
@@ -21,13 +75,27 @@ const elements = {
   generateKey: document.querySelector("#generate-key"),
   copyKey: document.querySelector("#copy-key"),
   settingsError: document.querySelector("#settings-error"),
+  editorDialog: document.querySelector("#editor-dialog"),
+  editorForm: document.querySelector("#editor-form"),
+  closeEditor: document.querySelector("#close-editor"),
+  editorKind: document.querySelector("#editor-kind"),
+  editorTitle: document.querySelector("#editor-title"),
+  performerEditor: document.querySelector("#performer-editor"),
+  selectedPerformers: document.querySelector("#selected-performers"),
+  performerInput: document.querySelector("#performer-input"),
+  addPerformer: document.querySelector("#add-performer"),
+  suggestionSection: document.querySelector("#suggestion-section"),
+  performerSuggestions: document.querySelector("#performer-suggestions"),
+  editorError: document.querySelector("#editor-error"),
+  deleteCurrent: document.querySelector("#delete-current"),
   template: document.querySelector("#link-item-template"),
 };
 
 let settings = loadSettings();
 let links = [];
-let sortMode = localStorage.getItem(SORT_KEY) === "site" ? "site" : "newest";
-elements.sortMode.value = sortMode;
+let activeKind = localStorage.getItem(ACTIVE_KIND_KEY) === "video" ? "video" : "comic";
+let editingLink = null;
+let selectedPerformerNames = [];
 
 function loadSettings() {
   try {
@@ -161,7 +229,7 @@ function stripSiteName(title, hostname) {
     .toLowerCase()
     .split(".")
     .filter((part) => part.length > 2 && !ignoredDomainParts.has(part));
-  const commonSiteName = /(?:youtube|ニコニコ|tiktok|vimeo|dmm|amazon|マンガ|漫画|コミック|comic|公式サイト|公式ページ)/i;
+  const commonSiteName = /(?:youtube|ニコニコ|tiktok|vimeo|dmm|amazon|マンガ|漫画|コミック|comic|カドコミ|ジャンプ\+?|公式サイト|公式ページ)/i;
   const lastPart = parts.at(-1);
   const compactLastPart = lastPart.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
   const matchesDomain = domainWords.some((word) => compactLastPart.includes(word.replace(/[^a-z0-9]/g, "")));
@@ -229,16 +297,27 @@ function extractComicTitle(title) {
     .trim();
 }
 
+function splitPerformerNames(names) {
+  const performers = names
+    .split(/\s*(?:,|、|\/|／|&|＆)\s*/u)
+    .map((name) => name.trim())
+    .filter(Boolean);
+
+  return [...new Set(performers)];
+}
+
 function contentMetadata(link) {
   const hostname = displayDomain(link.url);
   const rawTitle = normalizeTitle(link.title) || hostname;
   let title = stripSiteName(rawTitle, hostname) || rawTitle;
   const kind = detectContentKind(link.url, rawTitle);
-  let performers = "";
+  let performerNames = [];
 
   if (kind === "video") {
     const extracted = extractPerformers(title);
-    performers = extracted.names;
+    performerNames = Array.isArray(link.performers)
+      ? link.performers.map(normalizeTitle).filter(Boolean)
+      : splitPerformerNames(extracted.names);
     if (extracted.source) {
       title = title
         .replace(extracted.source, "")
@@ -254,71 +333,354 @@ function contentMetadata(link) {
 
   return {
     kind,
-    kindLabel: kind === "video" ? "動画" : kind === "comic" ? "漫画" : "",
-    title: title || hostname,
-    performers,
+    kindLabel: kind === "video" ? "動画" : kind === "comic" ? "漫画" : "その他",
+    title: normalizeTitle(link.custom_title) || title || hostname,
+    performerNames: [...new Set(performerNames)],
   };
 }
 
-function sortedLinks() {
-  return [...links].sort((first, second) => {
-    if (sortMode === "site") {
-      const siteDifference = displayDomain(first.url).localeCompare(displayDomain(second.url), "ja", {
-        sensitivity: "base",
-      });
-      if (siteDifference !== 0) return siteDifference;
+function newestFirst(items) {
+  return [...items].sort((first, second) => new Date(second.created_at) - new Date(first.created_at));
+}
+
+function attachSwipeGesture(card, link) {
+  const main = card.querySelector(".link-main");
+  let tracking = false;
+  let startX = 0;
+  let startY = 0;
+  let blockClick = false;
+
+  const resetPosition = () => {
+    main.style.transform = "";
+    card.classList.remove("is-swiping");
+  };
+
+  card.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    tracking = true;
+    startX = event.clientX;
+    startY = event.clientY;
+    card.setPointerCapture?.(event.pointerId);
+  });
+
+  card.addEventListener("pointermove", (event) => {
+    if (!tracking) return;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
+      tracking = false;
+      resetPosition();
+      return;
     }
-    return new Date(second.created_at) - new Date(first.created_at);
+
+    if (deltaX < 0 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      event.preventDefault();
+      main.style.transform = `translateX(${Math.max(deltaX, -96)}px)`;
+      card.classList.add("is-swiping");
+    }
+  });
+
+  card.addEventListener("pointerup", (event) => {
+    if (!tracking) return;
+    tracking = false;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    const shouldEdit = deltaX < -56 && Math.abs(deltaX) > Math.abs(deltaY);
+    resetPosition();
+
+    if (shouldEdit) {
+      blockClick = true;
+      event.preventDefault();
+      openEditor(link);
+      window.setTimeout(() => {
+        blockClick = false;
+      }, 400);
+    }
+  });
+
+  card.addEventListener("pointercancel", () => {
+    tracking = false;
+    resetPosition();
+  });
+
+  main.addEventListener("click", (event) => {
+    if (blockClick) event.preventDefault();
   });
 }
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat("ja-JP", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+function createLinkCard(link) {
+  const fragment = elements.template.content.cloneNode(true);
+  const card = fragment.querySelector(".link-card");
+  const anchor = fragment.querySelector(".link-main");
+  const title = fragment.querySelector(".link-title");
+  const accessibleEdit = fragment.querySelector(".edit-accessible");
+  const metadata = contentMetadata(link);
+
+  card.dataset.id = link.id;
+  anchor.href = link.url;
+  anchor.draggable = false;
+  anchor.setAttribute("aria-label", `${metadata.title}を開く`);
+  title.textContent = metadata.title;
+  accessibleEdit.setAttribute("aria-label", `${metadata.title}を編集`);
+  accessibleEdit.addEventListener("click", () => openEditor(link));
+  attachSwipeGesture(card, link);
+
+  return fragment;
+}
+
+function renderComicList(comicLinks) {
+  const works = document.createElement("div");
+  works.className = "comic-works";
+  for (const link of newestFirst(comicLinks)) {
+    works.append(createLinkCard(link));
+  }
+  elements.list.append(works);
+}
+
+function renderVideoList(videoLinks) {
+  const actorList = document.createElement("div");
+  actorList.className = "actor-list";
+  const groups = new Map();
+
+  for (const link of newestFirst(videoLinks)) {
+    const actorNames = contentMetadata(link).performerNames;
+    const groupNames = actorNames.length ? actorNames : ["出演者未設定"];
+
+    for (const actorName of groupNames) {
+      const actorLinks = groups.get(actorName) ?? [];
+      actorLinks.push(link);
+      groups.set(actorName, actorLinks);
+    }
+  }
+
+  const sortedGroups = [...groups.entries()].sort(([firstName], [secondName]) => {
+    if (firstName === "出演者未設定") return 1;
+    if (secondName === "出演者未設定") return -1;
+    return firstName.localeCompare(secondName, "ja", { sensitivity: "base" });
+  });
+
+  for (const [actorName, actorLinks] of sortedGroups) {
+    const actorGroup = document.createElement("section");
+    actorGroup.className = "actor-group";
+
+    const actorHeading = document.createElement("div");
+    actorHeading.className = "actor-heading";
+
+    const actorTag = document.createElement("h2");
+    actorTag.className = "actor-tag";
+    actorTag.textContent = actorName;
+
+    const works = document.createElement("div");
+    works.className = "actor-works";
+    for (const link of newestFirst(actorLinks)) {
+      works.append(createLinkCard(link));
+    }
+
+    actorHeading.append(actorTag);
+    actorGroup.append(actorHeading, works);
+    actorList.append(actorGroup);
+  }
+
+  elements.list.append(actorList);
+}
+
+function setActiveKind(kind) {
+  activeKind = kind;
+  localStorage.setItem(ACTIVE_KIND_KEY, kind);
+  renderLinks();
+}
+
+function updateTabs() {
+  const comicIsActive = activeKind === "comic";
+  elements.comicTab.setAttribute("aria-selected", String(comicIsActive));
+  elements.videoTab.setAttribute("aria-selected", String(!comicIsActive));
 }
 
 function renderLinks() {
   elements.list.replaceChildren();
-  elements.itemCount.textContent = String(links.length);
+  updateTabs();
   elements.emptyState.hidden = links.length !== 0;
 
-  for (const link of sortedLinks()) {
-    const fragment = elements.template.content.cloneNode(true);
-    const card = fragment.querySelector(".link-card");
-    const anchor = fragment.querySelector(".link-main");
-    const kind = fragment.querySelector(".content-kind");
-    const title = fragment.querySelector(".link-title");
-    const domain = fragment.querySelector(".link-domain");
-    const performers = fragment.querySelector(".performers");
-    const performerNames = performers.querySelector("strong");
-    const time = fragment.querySelector(".link-time");
-    const deleteButton = fragment.querySelector(".delete-button");
-    const metadata = contentMetadata(link);
+  if (!links.length) return;
 
-    card.dataset.id = link.id;
-    anchor.href = link.url;
-    title.textContent = metadata.title;
-    domain.textContent = displayDomain(link.url);
-    if (metadata.kindLabel) {
-      kind.textContent = metadata.kindLabel;
-      kind.hidden = false;
-    }
-    if (metadata.performers) {
-      performerNames.textContent = metadata.performers;
-      performers.hidden = false;
-    }
-    time.dateTime = link.created_at;
-    time.textContent = formatDate(link.created_at);
-    deleteButton.setAttribute("aria-label", `「${metadata.title}」を削除`);
-    deleteButton.addEventListener("click", () => deleteLink(link, deleteButton));
+  const visibleLinks = links.filter((link) => contentMetadata(link).kind === activeKind);
+  if (!visibleLinks.length) {
+    const categoryEmpty = document.createElement("p");
+    categoryEmpty.className = "category-empty";
+    categoryEmpty.textContent = activeKind === "comic" ? "漫画はまだありません" : "動画はまだありません";
+    elements.list.append(categoryEmpty);
+    return;
+  }
 
-    elements.list.append(fragment);
+  if (activeKind === "comic") {
+    renderComicList(visibleLinks);
+  } else {
+    renderVideoList(visibleLinks);
+  }
+}
+
+function editedPerformerSuggestions() {
+  const names = links.flatMap((link) => (Array.isArray(link.performers) ? link.performers : []));
+  return [...new Set(names.map(normalizeTitle).filter(Boolean))].sort((first, second) =>
+    first.localeCompare(second, "ja", { sensitivity: "base" }),
+  );
+}
+
+function addSelectedPerformer(name) {
+  const normalizedName = normalizeTitle(name);
+  if (!normalizedName || selectedPerformerNames.includes(normalizedName)) return;
+  selectedPerformerNames.push(normalizedName);
+  elements.performerInput.value = "";
+  renderPerformerEditor();
+}
+
+function removeSelectedPerformer(name) {
+  selectedPerformerNames = selectedPerformerNames.filter((performer) => performer !== name);
+  renderPerformerEditor();
+}
+
+function renderPerformerEditor() {
+  elements.selectedPerformers.replaceChildren();
+  elements.performerSuggestions.replaceChildren();
+
+  if (!selectedPerformerNames.length) {
+    const empty = document.createElement("p");
+    empty.className = "performer-empty";
+    empty.textContent = "出演者は未設定です";
+    elements.selectedPerformers.append(empty);
+  } else {
+    for (const name of selectedPerformerNames) {
+      const chip = document.createElement("button");
+      chip.className = "selected-performer";
+      chip.type = "button";
+      chip.textContent = name;
+      chip.setAttribute("aria-label", `${name}を外す`);
+      chip.addEventListener("click", () => removeSelectedPerformer(name));
+      elements.selectedPerformers.append(chip);
+    }
+  }
+
+  const suggestions = editedPerformerSuggestions().filter((name) => !selectedPerformerNames.includes(name));
+  elements.suggestionSection.hidden = suggestions.length === 0;
+  for (const name of suggestions) {
+    const suggestion = document.createElement("button");
+    suggestion.className = "performer-suggestion";
+    suggestion.type = "button";
+    suggestion.textContent = name;
+    suggestion.addEventListener("click", () => addSelectedPerformer(name));
+    elements.performerSuggestions.append(suggestion);
+  }
+}
+
+function openEditor(link) {
+  const metadata = contentMetadata(link);
+  editingLink = link;
+  selectedPerformerNames = [...metadata.performerNames];
+  elements.editorKind.textContent = metadata.kindLabel;
+  elements.editorTitle.value = metadata.title;
+  elements.editorError.textContent = "";
+  elements.performerEditor.hidden = metadata.kind !== "video";
+  elements.performerInput.value = "";
+
+  if (metadata.kind === "video") {
+    renderPerformerEditor();
+  }
+
+  if (!elements.editorDialog.open) {
+    elements.editorDialog.showModal();
+  }
+  window.setTimeout(() => elements.editorTitle.focus(), 50);
+}
+
+function closeEditor() {
+  if (elements.editorDialog.open) {
+    elements.editorDialog.close();
+  }
+  editingLink = null;
+  selectedPerformerNames = [];
+}
+
+async function saveCurrentEdit() {
+  if (!editingLink) return;
+  const metadata = contentMetadata(editingLink);
+  const customTitle = normalizeTitle(elements.editorTitle.value);
+  if (!customTitle) {
+    elements.editorError.textContent = "タイトルを入力してください。";
+    return;
+  }
+
+  const performers = metadata.kind === "video" ? [...selectedPerformerNames] : null;
+  const saveButton = elements.editorForm.querySelector(".editor-save-button");
+  saveButton.disabled = true;
+  elements.editorError.textContent = IS_LOCAL_PREVIEW ? "" : "保存中…";
+
+  try {
+    if (!IS_LOCAL_PREVIEW) {
+      const edited = await callRpc("edit_link", {
+        p_list_key: settings.listKey,
+        p_id: editingLink.id,
+        p_custom_title: customTitle,
+        p_performers: performers,
+      });
+      if (!edited) {
+        throw new Error("対象が見つかりませんでした。一覧を更新してください。");
+      }
+    }
+
+    editingLink.custom_title = customTitle;
+    if (metadata.kind === "video") editingLink.performers = performers;
+    closeEditor();
+    renderLinks();
+    setStatus(IS_LOCAL_PREVIEW ? "" : "変更を保存しました。");
+  } catch (error) {
+    elements.editorError.textContent = `保存できませんでした：${error.message}`;
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
+async function deleteCurrentLink() {
+  if (!editingLink) return;
+  const title = contentMetadata(editingLink).title;
+  if (!window.confirm(`「${title}」を削除しますか？`)) return;
+
+  const target = editingLink;
+  elements.deleteCurrent.disabled = true;
+  elements.editorError.textContent = IS_LOCAL_PREVIEW ? "" : "削除中…";
+  try {
+    if (!IS_LOCAL_PREVIEW) {
+      const deleted = await callRpc("delete_link", {
+        p_list_key: settings.listKey,
+        p_id: target.id,
+      });
+      if (!deleted) {
+        throw new Error("対象が見つかりませんでした。一覧を更新してください。");
+      }
+    }
+
+    links = links.filter((item) => item.id !== target.id);
+    closeEditor();
+    renderLinks();
+    setStatus(IS_LOCAL_PREVIEW ? "" : "削除しました。");
+  } catch (error) {
+    elements.editorError.textContent = `削除できませんでした：${error.message}`;
+  } finally {
+    elements.deleteCurrent.disabled = false;
   }
 }
 
 async function refreshLinks() {
+  if (IS_LOCAL_PREVIEW) {
+    links = PREVIEW_LINKS.map((link) => ({
+      ...link,
+      performers: Array.isArray(link.performers) ? [...link.performers] : null,
+    }));
+    renderLinks();
+    setStatus("");
+    return;
+  }
+
   if (!settings) {
     links = [];
     renderLinks();
@@ -333,7 +695,7 @@ async function refreshLinks() {
     const data = await callRpc("get_links", { p_list_key: settings.listKey });
     links = Array.isArray(data) ? data : [];
     renderLinks();
-    setStatus(links.length ? (sortMode === "site" ? "サイト名の順に表示しています。" : "新しい順に表示しています。") : "");
+    setStatus("");
   } catch (error) {
     links = [];
     renderLinks();
@@ -343,37 +705,25 @@ async function refreshLinks() {
   }
 }
 
-async function deleteLink(link, button) {
-  const confirmed = window.confirm(`「${contentMetadata(link).title}」を削除しますか？`);
-  if (!confirmed) return;
-
-  button.disabled = true;
-  setStatus("削除中…");
-  try {
-    const deleted = await callRpc("delete_link", {
-      p_list_key: settings.listKey,
-      p_id: link.id,
-    });
-    if (!deleted) {
-      throw new Error("対象が見つかりませんでした。一覧を更新してください。");
-    }
-    links = links.filter((item) => item.id !== link.id);
-    renderLinks();
-    setStatus("削除しました。");
-  } catch (error) {
-    setStatus(`削除できませんでした：${error.message}`, "error");
-    button.disabled = false;
-  }
-}
-
+elements.comicTab.addEventListener("click", () => setActiveKind("comic"));
+elements.videoTab.addEventListener("click", () => setActiveKind("video"));
 elements.settingsButton.addEventListener("click", openSettings);
 elements.closeSettings.addEventListener("click", closeSettings);
 elements.refreshButton.addEventListener("click", refreshLinks);
-elements.sortMode.addEventListener("change", () => {
-  sortMode = elements.sortMode.value === "site" ? "site" : "newest";
-  localStorage.setItem(SORT_KEY, sortMode);
-  renderLinks();
-  setStatus(sortMode === "site" ? "サイト名の順に表示しています。" : "新しい順に表示しています。");
+elements.closeEditor.addEventListener("click", closeEditor);
+elements.deleteCurrent.addEventListener("click", deleteCurrentLink);
+elements.addPerformer.addEventListener("click", () => addSelectedPerformer(elements.performerInput.value));
+
+elements.performerInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    addSelectedPerformer(elements.performerInput.value);
+  }
+});
+
+elements.editorForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await saveCurrentEdit();
 });
 
 elements.revealKey.addEventListener("click", () => {
