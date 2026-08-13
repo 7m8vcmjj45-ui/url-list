@@ -30,25 +30,21 @@
       </header>
 
       <main>
-        <section class="list-toolbar" aria-label="一覧の表示設定">
-          <p class="item-count"><span id="item-count">—</span>件</p>
-          <label class="sort-control">
-            <span>並び順</span>
-            <select id="sort-mode">
-              <option value="newest">新しい順</option>
-              <option value="site">サイト別</option>
-            </select>
-          </label>
-        </section>
+        <nav class="content-tabs" aria-label="表示する種類" role="tablist">
+          <button class="content-tab" id="comic-tab" type="button" role="tab" aria-selected="true">
+            漫画
+          </button>
+          <button class="content-tab" id="video-tab" type="button" role="tab" aria-selected="false">
+            動画
+          </button>
+        </nav>
 
         <p id="status" class="status" role="status" aria-live="polite"></p>
 
         <section id="list" class="link-list" aria-label="保存したURL一覧"></section>
 
         <section id="empty-state" class="empty-state" hidden>
-          <div class="empty-mark" aria-hidden="true">＋</div>
           <h2>まだ何もありません</h2>
-          <p>Safariでページを開き、共有から「MyListに追加」を実行してください。</p>
         </section>
       </main>
     </div>
@@ -59,10 +55,6 @@
           <h2>Supabase接続設定</h2>
           <button class="close-button" id="close-settings" type="button" aria-label="設定を閉じる">×</button>
         </div>
-
-        <p class="dialog-intro">
-          初回だけ設定します。内容はこの端末のブラウザ内に保存され、リポジトリには送信されません。
-        </p>
 
         <label>
           <span>Project URL</span>
@@ -110,28 +102,66 @@
           <button id="copy-key" class="text-button" type="button">キーをコピー</button>
         </div>
 
-        <p class="field-note">
-          リストキーはデータを見るための合言葉です。ショートカットにも同じ値を設定し、公開しないでください。
-        </p>
-
         <p id="settings-error" class="form-error" role="alert"></p>
 
         <button class="primary-button" type="submit">保存して接続</button>
       </form>
     </dialog>
 
+    <dialog id="editor-dialog" class="editor-dialog">
+      <form id="editor-form">
+        <header class="editor-header">
+          <button class="editor-back-button" id="close-editor" type="button" aria-label="一覧に戻る">
+            <span aria-hidden="true">‹</span>
+          </button>
+          <h2>作品を編集</h2>
+          <button class="editor-save-button" type="submit">保存</button>
+        </header>
+
+        <div class="editor-body">
+          <p id="editor-kind" class="editor-kind"></p>
+
+          <label class="editor-field">
+            <span>タイトル</span>
+            <input id="editor-title" type="text" maxlength="300" autocomplete="off" required />
+          </label>
+
+          <section id="performer-editor" class="performer-editor" hidden>
+            <div class="editor-section-heading">
+              <h3>出演者</h3>
+            </div>
+
+            <div id="selected-performers" class="selected-performers"></div>
+
+            <div class="performer-input-row">
+              <input
+                id="performer-input"
+                type="text"
+                maxlength="100"
+                autocomplete="off"
+                placeholder="出演者名を入力"
+              />
+              <button id="add-performer" type="button">追加</button>
+            </div>
+
+            <div id="suggestion-section" class="suggestion-section" hidden>
+              <div id="performer-suggestions" class="performer-suggestions"></div>
+            </div>
+          </section>
+
+          <p id="editor-error" class="form-error" role="alert"></p>
+
+          <button id="delete-current" class="danger-button" type="button">この作品を削除</button>
+        </div>
+      </form>
+    </dialog>
+
     <template id="link-item-template">
       <article class="link-card">
         <a class="link-main" target="_blank" rel="noopener noreferrer">
-          <div class="link-labels">
-            <span class="content-kind" hidden></span>
-            <span class="link-domain"></span>
-          </div>
           <h2 class="link-title"></h2>
-          <p class="performers" hidden><span>出演</span><strong></strong></p>
-          <time class="link-time"></time>
         </a>
-        <button class="delete-button" type="button" aria-label="このURLを削除">削除</button>
+        <button class="screen-reader-only edit-accessible" type="button">編集</button>
       </article>
     </template>
 
