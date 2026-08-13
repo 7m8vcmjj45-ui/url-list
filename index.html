@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MyList" />
+    <meta
+      name="description"
+      content="あとで読みたいURLを、iPhoneの共有シートからすばやく保存する個人用リスト"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>MyList</title>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="app-header">
+        <h1>MyList</h1>
+        <div class="header-actions">
+          <button class="icon-button" id="refresh-button" type="button" aria-label="一覧を更新">
+            <span aria-hidden="true">↻</span>
+          </button>
+          <button class="icon-button" id="settings-button" type="button" aria-label="接続設定を開く">
+            <span aria-hidden="true">•••</span>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="list-toolbar" aria-label="一覧の表示設定">
+          <p class="item-count"><span id="item-count">—</span>件</p>
+          <label class="sort-control">
+            <span>並び順</span>
+            <select id="sort-mode">
+              <option value="newest">新しい順</option>
+              <option value="site">サイト別</option>
+            </select>
+          </label>
+        </section>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+
+        <section id="list" class="link-list" aria-label="保存したURL一覧"></section>
+
+        <section id="empty-state" class="empty-state" hidden>
+          <div class="empty-mark" aria-hidden="true">＋</div>
+          <h2>まだ何もありません</h2>
+          <p>Safariでページを開き、共有から「MyListに追加」を実行してください。</p>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="settings-dialog" class="settings-dialog">
+      <form id="settings-form" method="dialog">
+        <div class="dialog-heading">
+          <h2>Supabase接続設定</h2>
+          <button class="close-button" id="close-settings" type="button" aria-label="設定を閉じる">×</button>
+        </div>
+
+        <p class="dialog-intro">
+          初回だけ設定します。内容はこの端末のブラウザ内に保存され、リポジトリには送信されません。
+        </p>
+
+        <label>
+          <span>Project URL</span>
+          <input
+            id="supabase-url"
+            name="supabaseUrl"
+            type="url"
+            inputmode="url"
+            autocomplete="url"
+            placeholder="https://xxxxxxxx.supabase.co"
+            required
+          />
+        </label>
+
+        <label>
+          <span>Publishable key</span>
+          <input
+            id="publishable-key"
+            name="publishableKey"
+            type="password"
+            autocomplete="off"
+            placeholder="sb_publishable_..."
+            required
+          />
+        </label>
+
+        <label>
+          <span>リストキー</span>
+          <div class="input-with-actions">
+            <input
+              id="list-key"
+              name="listKey"
+              type="password"
+              autocomplete="off"
+              minlength="20"
+              placeholder="20文字以上のランダムな文字列"
+              required
+            />
+            <button id="reveal-key" type="button">表示</button>
+          </div>
+        </label>
+
+        <div class="key-actions">
+          <button id="generate-key" class="text-button" type="button">新しいキーを生成</button>
+          <button id="copy-key" class="text-button" type="button">キーをコピー</button>
+        </div>
+
+        <p class="field-note">
+          リストキーはデータを見るための合言葉です。ショートカットにも同じ値を設定し、公開しないでください。
+        </p>
+
+        <p id="settings-error" class="form-error" role="alert"></p>
+
+        <button class="primary-button" type="submit">保存して接続</button>
+      </form>
+    </dialog>
+
+    <template id="link-item-template">
+      <article class="link-card">
+        <a class="link-main" target="_blank" rel="noopener noreferrer">
+          <div class="link-labels">
+            <span class="content-kind" hidden></span>
+            <span class="link-domain"></span>
+          </div>
+          <h2 class="link-title"></h2>
+          <p class="performers" hidden><span>出演</span><strong></strong></p>
+          <time class="link-time"></time>
+        </a>
+        <button class="delete-button" type="button" aria-label="このURLを削除">削除</button>
+      </article>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

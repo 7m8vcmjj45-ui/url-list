@@ -1,0 +1,10 @@
+{
+  "name": "MyList — URL保存リスト",
+  "short_name": "MyList",
+  "description": "iPhoneの共有シートから保存したURLの個人用リスト",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "ja"
+}

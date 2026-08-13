@@ -1,0 +1,409 @@
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #f6f6f6;
+  --text: #171717;
+  --muted: #707070;
+  --border: #e4e4e4;
+  --accent: #176b4d;
+  --danger: #a52c2c;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", YuGothic, Meiryo, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+select {
+  color: inherit;
+}
+
+.page-shell {
+  width: min(100%, 720px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: max(24px, env(safe-area-inset-top)) 18px max(36px, env(safe-area-inset-bottom));
+}
+
+.app-header,
+.header-actions,
+.list-toolbar,
+.dialog-heading,
+.input-with-actions,
+.key-actions,
+.link-labels,
+.performers {
+  display: flex;
+  align-items: center;
+}
+
+.app-header {
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+.header-actions {
+  gap: 4px;
+}
+
+.icon-button,
+.close-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-button:active,
+.close-button:active {
+  background: var(--surface);
+}
+
+.list-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 66px;
+}
+
+.item-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.item-count span {
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+select {
+  min-height: 38px;
+  padding: 0 30px 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
+  font-size: 0.82rem;
+}
+
+.status {
+  min-height: 20px;
+  margin: 0 2px 9px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.status[data-kind="error"] {
+  color: var(--danger);
+}
+
+.link-list {
+  border-top: 1px solid var(--border);
+}
+
+.link-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.link-main {
+  min-width: 0;
+  padding: 17px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.link-labels {
+  min-width: 0;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.content-kind {
+  flex: 0 0 auto;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+  background: #edf6f2;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.link-domain {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-title {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 8px;
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.performers {
+  gap: 8px;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.performers span {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.performers strong {
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-time {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.delete-button {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--danger);
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.delete-button:active {
+  background: #fff1f1;
+}
+
+.delete-button:disabled {
+  opacity: 0.4;
+}
+
+.empty-state {
+  padding: 52px 22px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.empty-mark {
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 1.5rem;
+}
+
+.empty-state h2 {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.empty-state p {
+  max-width: 25rem;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.settings-dialog {
+  width: min(calc(100% - 28px), 500px);
+  max-height: min(88vh, 720px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text);
+  background: var(--background);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.settings-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.settings-dialog form {
+  padding: 24px;
+}
+
+.dialog-heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dialog-heading h2 {
+  margin-bottom: 0;
+  font-size: 1.15rem;
+}
+
+.close-button {
+  flex: 0 0 auto;
+  font-size: 1.3rem;
+}
+
+.dialog-intro {
+  margin: 18px 0 22px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+
+.settings-dialog label {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 17px;
+  font-size: 0.77rem;
+  font-weight: 650;
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #cfcfcf;
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--background);
+  outline: none;
+  font-size: 16px;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+  outline: 2px solid rgba(23, 107, 77, 0.12);
+}
+
+.input-with-actions {
+  gap: 7px;
+}
+
+.input-with-actions button,
+.text-button {
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.input-with-actions button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 7px;
+}
+
+.key-actions {
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: -7px 0 13px;
+}
+
+.text-button {
+  min-height: 34px;
+  padding: 0;
+}
+
+.field-note {
+  margin-bottom: 15px;
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.65;
+}
+
+.form-error {
+  min-height: 20px;
+  margin-bottom: 7px;
+  color: var(--danger);
+  font-size: 0.76rem;
+}
+
+.primary-button {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .page-shell {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .settings-dialog form {
+    padding: 21px 17px;
+  }
+}
