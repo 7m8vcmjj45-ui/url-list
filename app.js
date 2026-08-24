@@ -55,6 +55,30 @@ const PREVIEW_LINKS = [
     performers: null,
     created_at: "2026-08-09T03:05:00Z",
   },
+  {
+    id: "preview-comic-4",
+    url: "https://comic-days.com/episode/4",
+    title: "ひらやすみ 第49話｜コミックDAYS",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-08T08:30:00Z",
+  },
+  {
+    id: "preview-comic-new-site",
+    url: "https://reader.example.jp/work/5",
+    title: "まだ判定登録されていない漫画作品",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-07T09:20:00Z",
+  },
+  {
+    id: "preview-video-4",
+    url: "https://www.youtube.com/watch?v=preview4",
+    title: "朝の光【出演：山田太郎】 - YouTube",
+    custom_title: null,
+    performers: null,
+    created_at: "2026-08-06T10:15:00Z",
+  },
 ];
 
 const elements = {
@@ -250,21 +274,23 @@ function detectContentKind(url, title) {
     // Invalid URLs are already prevented by the database.
   }
 
-  const comicHost = /(?:comic|manga|mangaplus|shonenjumpplus|comic-days|comic-walker|sunday-webry|tonarinoyj|yanmaga)/;
-  const comicPath = /\/(?:comic|comics|manga|episode|episodes|viewer|chapter)(?:\/|$)/;
-  const comicTitle = /(?:第\s*[0-9０-９]+\s*(?:話|巻)|漫画|マンガ|コミック|試し読み)/;
-  if (comicHost.test(hostname) || comicPath.test(path) || comicTitle.test(title)) {
-    return "comic";
-  }
-
-  const videoHost = /(?:youtube|youtu\.be|vimeo|tiktok|nicovideo|dmm|video)/;
-  const videoPath = /\/(?:watch|video|videos|movie|movies|player)(?:\/|$)/;
+  const videoHost = /(?:youtube|youtu\.be|vimeo|tiktok|nicovideo|niconico|dmm|fanza|video|movie|stream|tube|missav|supjav|njav|netflav|javmix|javdb|javlibrary|tokyomotion|xvideos|fc2)/;
+  const videoPath = /\/(?:watch|video|videos|movie|movies|player|stream|streaming|vod)(?:\/|$)/;
   const videoTitle = /(?:出演(?:者)?|キャスト|主演|予告編|動画|movie|video)/i;
   if (videoHost.test(hostname) || videoPath.test(path) || videoTitle.test(title)) {
     return "video";
   }
 
-  return "page";
+  const comicHost = /(?:comic|manga|mangaplus|shonenjumpplus|comic-days|comic-walker|sunday-webry|tonarinoyj|yanmaga|webtoon|ebook|bookwalker)/;
+  const comicPath = /\/(?:comic|comics|manga|episode|episodes|viewer|chapter|chapters)(?:\/|$)/;
+  const comicTitle = /(?:第\s*[0-9０-９]+\s*(?:話|巻)|漫画|マンガ|コミック|試し読み|chapter)/i;
+  if (comicHost.test(hostname) || comicPath.test(path) || comicTitle.test(title)) {
+    return "comic";
+  }
+
+  // MyListは漫画と動画だけを扱うため、判定できないページも漫画側に残す。
+  // これにより、新しいサイトが判定一覧にない場合でも保存作品が消えない。
+  return "comic";
 }
 
 function extractPerformers(title) {
@@ -310,7 +336,7 @@ function contentMetadata(link) {
   const hostname = displayDomain(link.url);
   const rawTitle = normalizeTitle(link.title) || hostname;
   let title = stripSiteName(rawTitle, hostname) || rawTitle;
-  const kind = detectContentKind(link.url, rawTitle);
+  const kind = Array.isArray(link.performers) ? "video" : detectContentKind(link.url, rawTitle);
   let performerNames = [];
 
   if (kind === "video") {
