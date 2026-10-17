@@ -129,7 +129,19 @@
         </header>
 
         <div class="editor-body">
-          <p id="editor-kind" class="editor-kind"></p>
+          <fieldset class="editor-kind-switcher">
+            <legend>種類</legend>
+            <div class="editor-kind-options">
+              <label>
+                <input id="editor-kind-comic" name="editorKind" type="radio" value="comic" />
+                <span>漫画</span>
+              </label>
+              <label>
+                <input id="editor-kind-video" name="editorKind" type="radio" value="video" />
+                <span>動画</span>
+              </label>
+            </div>
+          </fieldset>
 
           <label class="editor-field">
             <span>タイトル</span>

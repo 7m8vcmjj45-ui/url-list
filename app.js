@@ -103,7 +103,8 @@ const elements = {
   editorDialog: document.querySelector("#editor-dialog"),
   editorForm: document.querySelector("#editor-form"),
   closeEditor: document.querySelector("#close-editor"),
-  editorKind: document.querySelector("#editor-kind"),
+  editorKindComic: document.querySelector("#editor-kind-comic"),
+  editorKindVideo: document.querySelector("#editor-kind-video"),
   editorTitle: document.querySelector("#editor-title"),
   performerEditor: document.querySelector("#performer-editor"),
   selectedPerformers: document.querySelector("#selected-performers"),
@@ -355,7 +356,8 @@ function contentMetadata(link) {
   const hostname = displayDomain(link.url);
   const rawTitle = normalizeTitle(link.title) || hostname;
   let title = stripSiteName(rawTitle, hostname) || rawTitle;
-  const kind = Array.isArray(link.performers) ? "video" : detectContentKind(link.url, rawTitle);
+  const savedKind = ["comic", "video"].includes(link.content_kind) ? link.content_kind : null;
+  const kind = savedKind ?? (Array.isArray(link.performers) ? "video" : detectContentKind(link.url, rawTitle));
   let performerNames = [];
 
   if (kind === "video") {
@@ -621,16 +623,15 @@ function renderPerformerEditor() {
 function openEditor(link) {
   const metadata = contentMetadata(link);
   editingLink = link;
-  selectedPerformerNames = [...metadata.performerNames];
-  elements.editorKind.textContent = metadata.kindLabel;
+  selectedPerformerNames = Array.isArray(link.performers)
+    ? link.performers.map(normalizeTitle).filter(Boolean)
+    : [...metadata.performerNames];
+  elements.editorKindComic.checked = metadata.kind === "comic";
+  elements.editorKindVideo.checked = metadata.kind === "video";
   elements.editorTitle.value = metadata.title;
   elements.editorError.textContent = "";
-  elements.performerEditor.hidden = metadata.kind !== "video";
   elements.performerInput.value = "";
-
-  if (metadata.kind === "video") {
-    renderPerformerEditor();
-  }
+  updateEditorKind(metadata.kind);
 
   if (!elements.editorDialog.open) {
     elements.editorDialog.showModal();
@@ -639,6 +640,16 @@ function openEditor(link) {
     resizeEditorTitle();
     elements.editorTitle.focus();
   }, 50);
+}
+
+function updateEditorKind(kind) {
+  const isVideo = kind === "video";
+  elements.performerEditor.hidden = !isVideo;
+  if (isVideo) renderPerformerEditor();
+}
+
+function selectedEditorKind() {
+  return elements.editorKindVideo.checked ? "video" : "comic";
 }
 
 function resizeEditorTitle() {
@@ -658,14 +669,14 @@ function closeEditor() {
 
 async function saveCurrentEdit() {
   if (!editingLink) return;
-  const metadata = contentMetadata(editingLink);
+  const kind = selectedEditorKind();
   const customTitle = normalizeTitle(elements.editorTitle.value);
   if (!customTitle) {
     elements.editorError.textContent = "タイトルを入力してください。";
     return;
   }
 
-  const performers = metadata.kind === "video" ? [...selectedPerformerNames] : null;
+  const performers = kind === "video" ? [...selectedPerformerNames] : null;
   const saveButton = elements.editorForm.querySelector(".editor-save-button");
   saveButton.disabled = true;
   elements.editorError.textContent = IS_LOCAL_PREVIEW ? "" : "保存中…";
@@ -677,6 +688,7 @@ async function saveCurrentEdit() {
         p_id: editingLink.id,
         p_custom_title: customTitle,
         p_performers: performers,
+        p_content_kind: kind,
       });
       if (!edited) {
         throw new Error("対象が見つかりませんでした。一覧を更新してください。");
@@ -684,12 +696,18 @@ async function saveCurrentEdit() {
     }
 
     editingLink.custom_title = customTitle;
-    if (metadata.kind === "video") editingLink.performers = performers;
+    editingLink.content_kind = kind;
+    if (kind === "video") editingLink.performers = performers;
+    activeKind = kind;
+    localStorage.setItem(ACTIVE_KIND_KEY, kind);
     closeEditor();
     renderLinks();
     setStatus("");
   } catch (error) {
-    elements.editorError.textContent = `保存できませんでした：${error.message}`;
+    const migrationRequired = /p_content_kind|schema cache/i.test(error.message);
+    elements.editorError.textContent = migrationRequired
+      ? "Supabaseの種類変更用SQLを先に実行してください。"
+      : `保存できませんでした：${error.message}`;
   } finally {
     saveButton.disabled = false;
   }
@@ -778,6 +796,8 @@ elements.performerInput.addEventListener("keydown", (event) => {
 
 elements.editorTitle.addEventListener("input", resizeEditorTitle);
 elements.editorTitle.addEventListener("compositionend", resizeEditorTitle);
+elements.editorKindComic.addEventListener("change", () => updateEditorKind("comic"));
+elements.editorKindVideo.addEventListener("change", () => updateEditorKind("video"));
 
 elements.editorForm.addEventListener("submit", async (event) => {
   event.preventDefault();
