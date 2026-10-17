@@ -93,6 +93,7 @@ h1 {
 }
 
 .icon-button,
+.dashboard-button,
 .close-button,
 .editor-back-button {
   display: grid;
@@ -106,7 +107,18 @@ h1 {
   cursor: pointer;
 }
 
+.dashboard-button {
+  width: auto;
+  min-width: 44px;
+  padding: 0 8px;
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .icon-button:active,
+.dashboard-button:active,
 .close-button:active,
 .editor-back-button:active {
   background: var(--surface);

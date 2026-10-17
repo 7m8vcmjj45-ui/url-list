@@ -86,6 +86,7 @@ const elements = {
   emptyState: document.querySelector("#empty-state"),
   status: document.querySelector("#status"),
   refreshButton: document.querySelector("#refresh-button"),
+  dashboardLink: document.querySelector("#supabase-dashboard-link"),
   settingsButton: document.querySelector("#settings-button"),
   comicTab: document.querySelector("#comic-tab"),
   videoTab: document.querySelector("#video-tab"),
@@ -137,6 +138,23 @@ function normalizeUrl(value) {
   return value.trim().replace(/\/+$/, "");
 }
 
+function projectDashboardUrl(supabaseUrl) {
+  try {
+    const hostname = new URL(supabaseUrl).hostname.toLowerCase();
+    const match = hostname.match(/^([a-z0-9-]+)\.supabase\.co$/);
+    if (match) {
+      return `https://supabase.com/dashboard/project/${match[1]}`;
+    }
+  } catch {
+    // 未設定時はSupabaseのプロジェクト一覧を開く。
+  }
+  return "https://supabase.com/dashboard/projects";
+}
+
+function updateDashboardLink(supabaseUrl = settings?.supabaseUrl ?? "") {
+  elements.dashboardLink.href = projectDashboardUrl(supabaseUrl);
+}
+
 function validateSettings(candidate) {
   let parsedUrl;
   try {
@@ -166,6 +184,7 @@ function openSettings() {
   elements.publishableKey.value = settings?.publishableKey ?? "";
   elements.listKey.value = settings?.listKey ?? "";
   elements.settingsError.textContent = "";
+  updateDashboardLink(elements.supabaseUrl.value);
   if (!elements.settingsDialog.open) {
     elements.settingsDialog.showModal();
   }
@@ -782,6 +801,7 @@ elements.generateKey.addEventListener("click", () => {
 });
 
 elements.copyKey.addEventListener("click", copyListKey);
+elements.supabaseUrl.addEventListener("input", () => updateDashboardLink(elements.supabaseUrl.value));
 
 elements.settingsForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -797,6 +817,7 @@ elements.settingsForm.addEventListener("submit", async (event) => {
     await callRpc("get_links", { p_list_key: candidate.listKey }, candidate);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
     settings = candidate;
+    updateDashboardLink(candidate.supabaseUrl);
     closeSettings();
     await refreshLinks();
   } catch (error) {
@@ -804,4 +825,5 @@ elements.settingsForm.addEventListener("submit", async (event) => {
   }
 });
 
+updateDashboardLink();
 refreshLinks();
